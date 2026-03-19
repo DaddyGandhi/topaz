@@ -3,381 +3,197 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Topaz</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>Topaz · Label Splitter</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --blue: #4A90D9;
+  --blue-dim: #0D1F3C;
+  --blue-mid: #3A7BC8;
+  --blue-text: #93C3F0;
+  --bg: #0E0E0E;
+  --bg2: #161616;
+  --bg3: #1F1F1F;
+  --bg4: #2A2A2A;
+  --border: rgba(255,255,255,0.08);
+  --border-h: rgba(255,255,255,0.15);
+  --text: #F0EDE6;
+  --text2: #8A8780;
+  --text3: #555350;
+  --green: #2EC27E;
+  --red: #E24B4A;
+  --amber: #F5A623;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
 
-  :root {
-    --topaz: #4A90D9;
-    --topaz-light: #0D1F3C;
-    --topaz-mid: #3A7BC8;
-    --topaz-dark: #93C3F0;
-    --bg: #0E0E0E;
-    --bg2: #161616;
-    --bg3: #1F1F1F;
-    --bg4: #2A2A2A;
-    --border: rgba(255,255,255,0.08);
-    --border-hover: rgba(255,255,255,0.15);
-    --text: #F0EDE6;
-    --text2: #8A8780;
-    --text3: #555350;
-    --red: #E24B4A;
-    --green: #2EC27E;
-    --blue: #378ADD;
-  }
+/* Header */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 52px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg); position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+.logo-blue { color: var(--blue); }
+.badge { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.5px; }
+.badge-blue { background: var(--blue-dim); color: var(--blue-text); }
+.badge-gray { background: var(--bg3); color: var(--text2); }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    font-size: 14px;
-    line-height: 1.6;
-  }
+/* Layout */
+.page { max-width: 900px; margin: 0 auto; padding: 36px 28px 80px; }
 
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 28px;
-    height: 52px;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 100;
-  }
+/* Step cards */
+.steps { display: flex; flex-direction: column; gap: 16px; }
 
-  .logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 18px;
-    letter-spacing: -0.5px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+.step-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  transition: border-color 0.2s;
+}
+.step-card.active { border-color: var(--blue); }
+.step-card.done { border-color: rgba(46,194,126,0.4); }
 
-  .logo span { color: var(--topaz); }
+.step-header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+}
+.step-card.done .step-header { background: rgba(46,194,126,0.04); }
+.step-card.active .step-header { background: rgba(74,144,217,0.05); }
 
-  .header-right { display: flex; align-items: center; gap: 12px; }
+.step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1px solid var(--border-h);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+  color: var(--text3); flex-shrink: 0;
+  transition: all 0.2s;
+}
+.step-card.active .step-num { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+.step-card.done .step-num { border-color: var(--green); background: rgba(46,194,126,0.15); color: var(--green); }
 
-  .badge {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    font-weight: 500;
-    background: var(--topaz-light);
-    color: var(--topaz-dark);
-    padding: 2px 8px;
-    border-radius: 20px;
-    letter-spacing: 0.5px;
-  }
+.step-title { font-weight: 500; font-size: 14px; flex: 1; }
+.step-subtitle { font-size: 12px; color: var(--text3); }
 
-  .layout {
-    display: grid;
-    grid-template-columns: 340px 1fr;
-    height: calc(100vh - 52px);
-  }
+.step-body { padding: 20px; }
 
-  .left-panel {
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+/* Upload zones */
+.upload-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.upload-row.two { grid-template-columns: 1fr 1fr; }
 
-  .panel-section {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border);
-  }
+.drop-zone {
+  border: 1px dashed var(--border-h); border-radius: 8px;
+  padding: 20px 14px; text-align: center; cursor: pointer;
+  transition: all 0.2s; background: var(--bg); position: relative; min-height: 100px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+}
+.drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.drop-zone:hover, .drop-zone.over { border-color: var(--blue); background: rgba(74,144,217,0.04); }
+.drop-zone.loaded { border-color: rgba(46,194,126,0.5); background: rgba(46,194,126,0.03); }
+.drop-zone.loaded:hover { border-color: var(--green); }
 
-  .panel-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 1px;
-    color: var(--text3);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
+.dz-icon { color: var(--text3); margin-bottom: 2px; }
+.dz-label { font-size: 12px; color: var(--text2); }
+.dz-label strong { color: var(--blue); font-weight: 500; }
+.dz-hint { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; }
+.dz-loaded { font-size: 11px; color: var(--green); font-weight: 500; display: none; gap: 5px; align-items: center; }
+.drop-zone.loaded .dz-loaded { display: flex; }
+.drop-zone.loaded .dz-label, .drop-zone.loaded .dz-hint, .drop-zone.loaded .dz-icon { display: none; }
 
-  .upload-zone {
-    border: 1px dashed var(--border-hover);
-    border-radius: 10px;
-    padding: 24px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: var(--bg2);
-    position: relative;
-  }
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 16px; border-radius: 8px;
+  font-size: 13px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; border: none; white-space: nowrap;
+}
+.btn-primary { background: var(--blue); color: #071428; font-weight: 600; }
+.btn-primary:hover { background: var(--blue-mid); }
+.btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+.btn-ghost:hover { border-color: var(--border-h); color: var(--text); }
+.btn-green { background: rgba(46,194,126,0.15); color: var(--green); border: 1px solid rgba(46,194,126,0.3); }
+.btn-green:hover { background: rgba(46,194,126,0.25); }
 
-  .upload-zone:hover, .upload-zone.drag-over {
-    border-color: var(--topaz);
-    background: rgba(74, 144, 217, 0.04);
-  }
+/* Step actions */
+.step-actions { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.step-actions .note { font-size: 12px; color: var(--text3); margin-left: auto; }
 
-  .upload-zone input[type=file] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
+/* Results table */
+.results-section { margin-top: 0; }
+.results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.results-title { font-size: 13px; font-weight: 500; color: var(--text2); }
 
-  .upload-zone p { color: var(--text2); font-size: 13px; }
-  .upload-zone p strong { color: var(--topaz); font-weight: 500; }
-  .upload-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.sku-groups { display: flex; flex-direction: column; gap: 10px; }
 
-  .order-list-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 24px 10px;
-  }
+.sku-group {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+}
+.sku-group-header {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sku-name { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--blue); font-weight: 500; flex: 1; }
+.sku-count { font-size: 11px; color: var(--text3); }
+.sku-orders { padding: 10px 16px; display: flex; flex-direction: column; gap: 6px; }
 
-  .order-count {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--text2);
-  }
+.order-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: 6px; background: var(--bg2);
+  font-size: 12px;
+}
+.order-row-name { flex: 1; color: var(--text); font-weight: 500; }
+.order-row-zip { font-family: 'DM Mono', monospace; color: var(--text3); font-size: 11px; }
+.order-row-tracking { font-family: 'DM Mono', monospace; color: var(--text2); font-size: 10px; flex: 1.2; text-align: right; }
+.order-row-page { font-family: 'DM Mono', monospace; color: var(--text3); font-size: 10px; min-width: 40px; text-align: right; }
 
-  .select-all-btn {
-    font-size: 12px;
-    color: var(--topaz);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    padding: 0;
-    opacity: 0.8;
-    transition: opacity 0.15s;
-  }
-  .select-all-btn:hover { opacity: 1; }
+.match-badge { font-size: 10px; padding: 2px 6px; border-radius: 10px; }
+.matched { background: rgba(46,194,126,0.12); color: var(--green); }
+.unmatched { background: rgba(226,75,74,0.12); color: var(--red); }
 
-  .order-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 16px 16px;
-  }
-  .order-list::-webkit-scrollbar { width: 4px; }
-  .order-list::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+/* Download grid */
+.download-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 14px; }
+.dl-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; display: flex; flex-direction: column; gap: 8px;
+  transition: border-color 0.15s;
+}
+.dl-card:hover { border-color: var(--border-h); }
+.dl-sku { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--blue); }
+.dl-meta { font-size: 11px; color: var(--text3); }
 
-  .order-card {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 14px;
-    margin-bottom: 6px;
-    cursor: pointer;
-    transition: all 0.15s;
-    background: var(--bg2);
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .order-card:hover { border-color: var(--border-hover); background: var(--bg3); }
-  .order-card.selected { border-color: var(--topaz); background: rgba(74, 144, 217, 0.06); }
+/* Progress */
+.progress-bar { height: 3px; background: var(--bg4); border-radius: 2px; overflow: hidden; margin-top: 12px; }
+.progress-fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.3s; width: 0%; }
 
-  .order-checkbox {
-    width: 15px;
-    height: 15px;
-    border-radius: 4px;
-    border: 1px solid var(--border-hover);
-    background: var(--bg3);
-    flex-shrink: 0;
-    margin-top: 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-  }
-  .order-card.selected .order-checkbox { background: var(--topaz); border-color: var(--topaz); }
-  .order-checkbox svg { display: none; }
-  .order-card.selected .order-checkbox svg { display: block; }
+/* Log */
+.log { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); margin-top: 12px; line-height: 1.8; max-height: 80px; overflow-y: auto; }
+.log .ok { color: var(--green); }
+.log .warn { color: var(--amber); }
+.log .err { color: var(--red); }
 
-  .order-info { flex: 1; min-width: 0; }
-  .order-id { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--topaz); margin-bottom: 2px; }
-  .order-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
-  .order-meta { font-size: 11px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Stat pills */
+.stat-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.stat-pill {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 12px; display: flex; flex-direction: column; gap: 1px;
+}
+.stat-pill-val { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; }
+.stat-pill-label { font-size: 10px; color: var(--text3); }
 
-  .order-status { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 500; flex-shrink: 0; }
-  .status-unshipped { background: rgba(226, 75, 74, 0.12); color: var(--red); }
-  .status-shipped   { background: rgba(46, 194, 126, 0.12); color: var(--green); }
-  .status-pending   { background: rgba(74, 144, 217, 0.12); color: var(--topaz); }
-
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--text3);
-    padding: 40px 24px;
-    text-align: center;
-    font-size: 13px;
-  }
-  .empty-state svg { margin-bottom: 12px; opacity: 0.4; }
-
-  .right-panel { display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
-
-  .right-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 28px;
-    border-bottom: 1px solid var(--border);
-    gap: 12px;
-    flex-shrink: 0;
-  }
-
-  .toolbar-left { display: flex; align-items: center; gap: 10px; }
-
-  .sel-input {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    padding: 6px 28px 6px 10px;
-    cursor: pointer;
-    outline: none;
-    transition: border-color 0.15s;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238A8780' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-  }
-  .sel-input:hover, .sel-input:focus { border-color: var(--border-hover); }
-
-  .sep { width: 1px; height: 20px; background: var(--border); }
-
-  .btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    border-radius: 7px;
-    font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s;
-    border: none;
-    white-space: nowrap;
-  }
-
-  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text2); }
-  .btn-ghost:hover { border-color: var(--border-hover); color: var(--text); }
-  .btn-primary { background: var(--topaz); color: #071428; font-weight: 600; }
-  .btn-primary:hover { background: var(--topaz-mid); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .preview-area { flex: 1; overflow-y: auto; padding: 24px 28px; }
-  .preview-area::-webkit-scrollbar { width: 4px; }
-  .preview-area::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
-
-  .label-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-
-  .label-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: border-color 0.15s; }
-  .label-card:hover { border-color: var(--border-hover); }
-
-  .label-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg3);
-  }
-  .label-card-id { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--topaz); }
-
-  .label-card-actions { display: flex; gap: 6px; }
-
-  .icon-btn {
-    width: 26px; height: 26px; border-radius: 5px; background: none; border: none; cursor: pointer;
-    color: var(--text3); display: flex; align-items: center; justify-content: center; transition: all 0.15s;
-  }
-  .icon-btn:hover { background: var(--bg4); color: var(--text); }
-
-  .label-visual {
-    background: #FFFFFF;
-    margin: 14px;
-    border-radius: 6px;
-    padding: 16px 18px;
-    font-family: 'DM Mono', monospace;
-    color: #111;
-    font-size: 11px;
-    line-height: 1.5;
-    border: 1px solid #E5E5E5;
-  }
-  .label-from { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .label-company { font-size: 12px; font-weight: 700; color: #111; margin-bottom: 10px; }
-  .label-divider { border: none; border-top: 1px dashed #DDD; margin: 10px 0; }
-  .label-to-tag { font-size: 9px; color: #FFF; background: #111; padding: 2px 6px; border-radius: 3px; display: inline-block; margin-bottom: 6px; letter-spacing: 0.5px; }
-  .label-recipient { font-size: 14px; font-weight: 700; color: #111; margin-bottom: 4px; line-height: 1.3; }
-  .label-address { font-size: 12px; color: #333; line-height: 1.6; }
-  .label-barcode-area { margin-top: 12px; padding-top: 10px; border-top: 1px dashed #DDD; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .label-service-badge { font-size: 10px; font-weight: 700; color: #111; border: 2px solid #111; padding: 3px 8px; border-radius: 4px; text-align: center; line-height: 1.3; }
-  .label-order-ref { font-size: 9px; color: #888; }
-
-  .no-preview { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text3); text-align: center; gap: 10px; }
-  .no-preview-icon { width: 48px; height: 48px; opacity: 0.2; margin-bottom: 4px; }
-  .no-preview h3 { font-size: 15px; font-weight: 500; color: var(--text2); }
-  .no-preview p { font-size: 13px; max-width: 280px; }
-
-  .bottom-bar {
-    border-top: 1px solid var(--border);
-    padding: 12px 28px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-    background: var(--bg);
-  }
-  .bottom-stats { display: flex; gap: 20px; }
-  .stat { display: flex; align-items: baseline; gap: 5px; }
-  .stat-val { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; color: var(--text); }
-  .stat-label { font-size: 11px; color: var(--text3); }
-  .bottom-actions { display: flex; gap: 8px; }
-
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: var(--bg3);
-    border: 1px solid var(--border-hover);
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 13px;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    z-index: 999;
-    transform: translateY(80px);
-    opacity: 0;
-    transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
-  }
-  .toast.show { transform: translateY(0); opacity: 1; }
-  .toast.success { border-color: rgba(46,194,126,0.3); }
-  .toast.error { border-color: rgba(226,75,74,0.3); }
-  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .dot-success { background: var(--green); }
-  .dot-error { background: var(--red); }
-
-  @media print {
-    header, .left-panel, .right-toolbar, .bottom-bar, .label-card-header, .icon-btn { display: none !important; }
-    .layout { display: block; }
-    .right-panel { overflow: visible; }
-    .preview-area { padding: 0; overflow: visible; }
-    .label-preview-grid { grid-template-columns: 1fr 1fr; }
-    .label-card { border: none; break-inside: avoid; }
-    .label-visual { margin: 8px; }
-    body { background: white; }
-  }
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--bg3); border: 1px solid var(--border-h); border-radius: 8px;
+  padding: 10px 16px; font-size: 13px; color: var(--text);
+  display: flex; align-items: center; gap: 8px; z-index: 999;
+  transform: translateY(80px); opacity: 0; transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-color: rgba(46,194,126,0.4); }
+.toast.error { border-color: rgba(226,75,74,0.4); }
+.tdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -390,380 +206,461 @@
       <path d="M6 8L2 8L6 18H6L6 8Z" fill="#4A90D9" opacity="0.6"/>
       <path d="M14 8L18 8L14 18H14L14 8Z" fill="#4A90D9" opacity="0.6"/>
     </svg>
-    <span>Topaz</span>
+    <span>Topaz</span> <span class="logo-blue">·</span> <span style="font-weight:600;font-size:14px;color:var(--text2)">Label Splitter</span>
   </div>
-  <div class="header-right">
-    <span class="badge">AMAZON</span>
-    <span class="badge" style="background: var(--bg3); color: var(--text2);">LABEL GEN</span>
+  <div style="display:flex;gap:8px">
+    <span class="badge badge-blue">AMAZON</span>
+    <span class="badge badge-gray">EASYPOST</span>
+    <span class="badge badge-gray">SKU SPLIT</span>
   </div>
 </header>
 
-<div class="layout">
-  <!-- Left panel -->
-  <div class="left-panel">
-    <div class="panel-section">
-      <div class="panel-label">Import Orders</div>
-      <div class="upload-zone" id="uploadZone">
-        <input type="file" id="csvInput" accept=".csv,.txt,.tsv">
-        <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin: 0 auto 10px; color: var(--text3); display: block;">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
-        </svg>
-        <p><strong>Drop CSV here</strong> or click to browse</p>
-        <p class="upload-hint">Amazon order report · TSV or CSV</p>
-      </div>
-    </div>
+<div class="page">
+  <div class="steps">
 
-    <div class="order-list-header">
-      <span class="order-count" id="orderCount">0 orders</span>
-      <button class="select-all-btn" onclick="toggleSelectAll()">Select all</button>
-    </div>
-
-    <div class="order-list" id="orderList">
-      <div class="empty-state" id="emptyState">
-        <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15"/>
-        </svg>
-        <p>Upload an order report to get started</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Right panel -->
-  <div class="right-panel">
-    <div class="right-toolbar">
-      <div class="toolbar-left">
-        <select class="sel-input" id="carrierSelect" onchange="updateServiceOptions()">
-          <option value="usps">USPS</option>
-          <option value="ups">UPS</option>
-          <option value="fedex">FedEx</option>
-        </select>
-        <select class="sel-input" id="serviceSelect">
-          <option value="first_class">First Class</option>
-          <option value="priority">Priority Mail</option>
-          <option value="ground_advantage">Ground Advantage</option>
-          <option value="express">Priority Mail Express</option>
-        </select>
-        <div class="sep"></div>
-        <button class="btn btn-ghost" onclick="previewSelected()">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
-          Preview
-        </button>
-      </div>
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <span id="selectionLabel" style="font-size: 12px; color: var(--text3);">No orders selected</span>
-        <button class="btn btn-primary" id="generateBtn" onclick="generateLabels()" disabled>
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-          </svg>
-          Generate Labels
-        </button>
-      </div>
-    </div>
-
-    <div class="preview-area" id="previewArea">
-      <div class="no-preview" id="noPreview">
-        <svg class="no-preview-icon" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-        <h3>No labels previewed</h3>
-        <p>Select orders from the list, then click Preview to see label mockups before generating.</p>
-      </div>
-      <div class="label-preview-grid" id="labelGrid" style="display:none;"></div>
-    </div>
-
-    <div class="bottom-bar">
-      <div class="bottom-stats">
-        <div class="stat">
-          <span class="stat-val" id="statTotal">0</span>
-          <span class="stat-label">total orders</span>
+    <!-- Step 1: Amazon CSV -->
+    <div class="step-card active" id="card1">
+      <div class="step-header">
+        <div class="step-num" id="num1">1</div>
+        <div>
+          <div class="step-title">Upload Amazon Order Report</div>
+          <div class="step-subtitle">The CSV/TSV you download from Seller Central → Reports → Orders</div>
         </div>
-        <div class="stat">
-          <span class="stat-val" id="statSelected" style="color: var(--topaz);">0</span>
-          <span class="stat-label">selected</span>
-        </div>
-        <div class="stat">
-          <span class="stat-val" id="statLabels" style="color: var(--green);">0</span>
-          <span class="stat-label">labels ready</span>
+        <span id="amzStatus" class="badge" style="display:none"></span>
+      </div>
+      <div class="step-body">
+        <div class="drop-zone" id="amzZone">
+          <input type="file" id="amzFile" accept=".csv,.tsv,.txt">
+          <svg class="dz-icon" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15"/></svg>
+          <p class="dz-label"><strong>Amazon order CSV</strong></p>
+          <p class="dz-hint">order-id · recipient-name · ship-postal-code · sku</p>
+          <div class="dz-loaded" id="amzLoaded">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg>
+            <span id="amzLoadedTxt"></span>
+          </div>
         </div>
       </div>
-      <div class="bottom-actions">
-        <button class="btn btn-ghost" onclick="clearAll()">Clear</button>
-        <button class="btn btn-ghost" onclick="exportCSV()">Export CSV</button>
-        <button class="btn btn-primary" onclick="printLabels()">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.056 48.056 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z"/>
-          </svg>
-          Print All
-        </button>
+    </div>
+
+    <!-- Step 2: EasyPost files -->
+    <div class="step-card" id="card2">
+      <div class="step-header">
+        <div class="step-num" id="num2">2</div>
+        <div>
+          <div class="step-title">Upload EasyPost Output</div>
+          <div class="step-subtitle">The CSV + PDF you get back from EasyPost after generating labels</div>
+        </div>
+        <span id="epStatus" class="badge" style="display:none"></span>
+      </div>
+      <div class="step-body">
+        <div class="upload-row two">
+          <div class="drop-zone" id="epCsvZone">
+            <input type="file" id="epCsvFile" accept=".csv,.txt">
+            <svg class="dz-icon" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-3.75.125v-5.25m0 0a1.125 1.125 0 011.125-1.125h1.5a1.125 1.125 0 011.125 1.125m-3.75 0v5.25m9-10.5l-3 3m0 0l-3-3m3 3V3"/></svg>
+            <p class="dz-label"><strong>EasyPost CSV</strong></p>
+            <p class="dz-hint">Name · Address · ZIP · Tracking</p>
+            <div class="dz-loaded" id="epCsvLoaded">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg>
+              <span id="epCsvLoadedTxt"></span>
+            </div>
+          </div>
+          <div class="drop-zone" id="epPdfZone">
+            <input type="file" id="epPdfFile" accept=".pdf">
+            <svg class="dz-icon" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+            <p class="dz-label"><strong>EasyPost PDF</strong></p>
+            <p class="dz-hint">All labels · 1 page per label</p>
+            <div class="dz-loaded" id="epPdfLoaded">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg>
+              <span id="epPdfLoadedTxt"></span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Step 3: Process & Download -->
+    <div class="step-card" id="card3">
+      <div class="step-header">
+        <div class="step-num" id="num3">3</div>
+        <div>
+          <div class="step-title">Split Labels by SKU</div>
+          <div class="step-subtitle">Matches orders → labels by Name + ZIP, groups by SKU, outputs one PDF per SKU</div>
+        </div>
+      </div>
+      <div class="step-body">
+
+        <button class="btn btn-primary" id="processBtn" onclick="process()" disabled>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/></svg>
+          Match & Split Labels
+        </button>
+
+        <div class="progress-bar" id="progressBar" style="display:none"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="log" id="log" style="display:none"></div>
+
+        <div id="results" style="display:none">
+          <div class="stat-row" id="statRow"></div>
+          <div style="margin-top:20px;margin-bottom:10px;font-size:12px;color:var(--text2);font-weight:500;">Matched orders by SKU</div>
+          <div class="sku-groups" id="skuGroups"></div>
+          <div style="margin-top:20px;margin-bottom:10px;font-size:12px;color:var(--text2);font-weight:500;display:flex;align-items:center;justify-content:space-between;">
+            <span>Download PDFs</span>
+            <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="downloadAll()">Download all</button>
+          </div>
+          <div class="download-grid" id="dlGrid"></div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </div>
 
-<div class="toast" id="toast">
-  <div class="dot dot-success" id="toastDot"></div>
-  <span id="toastMsg"></span>
-</div>
+<div class="toast" id="toast"><div class="tdot" id="tdot"></div><span id="tmsg"></span></div>
 
 <script>
-let orders = [];
-let selectedIds = new Set();
+// State
+let amzOrders = [];       // [{orderId, name, zip, sku, ...}]
+let epRows = [];          // [{name, zip, tracking, pageIndex}]  0-based page index
+let epPdfBytes = null;    // ArrayBuffer
 
-const serviceMap = {
-  usps: ['First Class', 'Priority Mail', 'Ground Advantage', 'Priority Mail Express'],
-  ups: ['UPS Ground', 'UPS 2nd Day Air', 'UPS Next Day Air', 'UPS Simple Rate'],
-  fedex: ['FedEx Ground', 'FedEx 2Day', 'FedEx Overnight', 'FedEx Home Delivery']
-};
-
-function updateServiceOptions() {
-  const carrier = document.getElementById('carrierSelect').value;
-  const sel = document.getElementById('serviceSelect');
-  sel.innerHTML = serviceMap[carrier].map(s =>
-    `<option value="${s.toLowerCase().replace(/\s+/g,'_')}">${s}</option>`
-  ).join('');
+// ── File handlers ──
+function setupDrop(zoneId, inputId, onFile) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  input.addEventListener('change', e => { if (e.target.files[0]) onFile(e.target.files[0]); });
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('over');
+    const f = e.dataTransfer.files[0]; if (f) onFile(f);
+  });
 }
 
-const csvInput = document.getElementById('csvInput');
-const uploadZone = document.getElementById('uploadZone');
+setupDrop('amzZone', 'amzFile', parseAmzCsv);
+setupDrop('epCsvZone', 'epCsvFile', parseEpCsv);
+setupDrop('epPdfZone', 'epPdfFile', loadEpPdf);
 
-uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-uploadZone.addEventListener('drop', e => {
-  e.preventDefault(); uploadZone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) parseFile(file);
-});
-csvInput.addEventListener('change', e => { if (e.target.files[0]) parseFile(e.target.files[0]); });
-
-function parseFile(file) {
+// ── Parse Amazon CSV ──
+function parseAmzCsv(file) {
   const reader = new FileReader();
   reader.onload = e => {
     const text = e.target.result;
-    const delimiter = text.includes('\t') ? '\t' : ',';
+    const delim = text.includes('\t') ? '\t' : ',';
     const lines = text.trim().split('\n');
-    const headers = lines[0].split(delimiter).map(h => h.trim().replace(/"/g,'').toLowerCase());
-    orders = [];
+    const headers = lines[0].split(delim).map(h => h.trim().replace(/"/g, '').toLowerCase());
+
+    amzOrders = [];
     for (let i = 1; i < lines.length; i++) {
-      const vals = lines[i].split(delimiter).map(v => v.trim().replace(/"/g,''));
+      const vals = splitLine(lines[i], delim);
       if (vals.length < 3) continue;
-      const row = {};
-      headers.forEach((h, idx) => row[h] = vals[idx] || '');
-      orders.push({
-        id: row['order-id'] || row['amazon-order-id'] || `ORD-${i}`,
-        name: row['recipient-name'] || row['buyer-name'] || 'Unknown',
-        addr1: row['ship-address-1'] || '',
-        addr2: row['ship-address-2'] || '',
-        city: row['ship-city'] || '',
-        state: row['ship-state'] || '',
-        zip: row['ship-postal-code'] || '',
-        country: row['ship-country'] || 'US',
-        sku: row['sku'] || '',
-        product: row['product-name'] || '',
-        qty: row['quantity-purchased'] || '1',
-        service: row['ship-service-level'] || 'Standard',
-        status: row['order-status'] || 'Unshipped',
-        date: row['purchase-date'] ? row['purchase-date'].substring(0,10) : '',
+      const r = {};
+      headers.forEach((h, idx) => r[h] = (vals[idx] || '').trim());
+
+      const name = norm(r['recipient-name'] || r['buyer-name'] || '');
+      const zip = normZip(r['ship-postal-code'] || r['ship-zip'] || '');
+      const sku = r['sku'] || r['asin'] || 'UNKNOWN';
+      if (!name) continue;
+
+      amzOrders.push({
+        orderId: r['order-id'] || r['amazon-order-id'] || `row-${i}`,
+        name, zip, sku,
+        addr1: r['ship-address-1'] || '',
+        city: r['ship-city'] || '',
+        state: r['ship-state'] || '',
+        product: r['product-name'] || '',
+        qty: r['quantity-purchased'] || '1',
       });
     }
-    renderOrderList();
-    showToast(`Loaded ${orders.length} orders`, 'success');
+
+    markLoaded('amzZone', 'amzLoaded', 'amzLoadedTxt', `${amzOrders.length} orders loaded`);
+    toast(`${amzOrders.length} Amazon orders loaded`, 'success');
+    checkReady();
   };
   reader.readAsText(file);
 }
 
-function loadDemo() {
-  orders = [
-    { id: '114-8392741-0056234', name: 'Jordan Ramirez', addr1: '1428 Elm Street', addr2: 'Apt 3B', city: 'Austin', state: 'TX', zip: '78701', country: 'US', sku: 'WIDGET-BLU-L', product: 'Premium Widget Blue Large', qty: '2', service: 'Standard', status: 'Unshipped', date: '2024-03-14' },
-    { id: '112-4729183-2938475', name: 'Maria Chen', addr1: '9200 Sunset Blvd', addr2: '', city: 'Los Angeles', state: 'CA', zip: '90028', country: 'US', sku: 'GIZMO-RED-M', product: 'Gizmo Red Medium', qty: '1', service: 'Expedited', status: 'Unshipped', date: '2024-03-14' },
-    { id: '111-3847291-5674839', name: 'David Kim', addr1: '555 Mission St', addr2: 'Suite 900', city: 'San Francisco', state: 'CA', zip: '94105', country: 'US', sku: 'GADGET-GRN-XL', product: 'Gadget Green XL', qty: '3', service: 'Standard', status: 'Unshipped', date: '2024-03-13' },
-    { id: '113-9283741-8394751', name: 'Sarah Johnson', addr1: '88 Central Park West', addr2: '', city: 'New York', state: 'NY', zip: '10023', country: 'US', sku: 'ITEM-BLK-S', product: 'Item Black Small', qty: '1', service: 'Priority', status: 'Pending', date: '2024-03-13' },
-    { id: '116-2847193-7483920', name: 'James Martinez', addr1: '2000 Michigan Ave', addr2: 'Unit 4C', city: 'Chicago', state: 'IL', zip: '60601', country: 'US', sku: 'PROD-WHT-M', product: 'Product White Medium', qty: '2', service: 'Standard', status: 'Shipped', date: '2024-03-12' },
-  ];
-  renderOrderList();
-  showToast('Demo data loaded', 'success');
+// ── Parse EasyPost CSV ──
+function parseEpCsv(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, '').toLowerCase());
+
+    epRows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const vals = splitLine(lines[i], ',');
+      if (vals.length < 2) continue;
+      const r = {};
+      headers.forEach((h, idx) => r[h] = (vals[idx] || '').trim());
+
+      const name = norm(r['name'] || '');
+      const zip = normZip(r['zip'] || r['postal code'] || r['postal_code'] || '');
+      const tracking = (r['tracking'] || r['tracking number'] || r['tracking_number'] || '').replace(/\s/g, '');
+      if (!name) continue;
+
+      epRows.push({ name, zip, tracking, pageIndex: i - 1 }); // 0-based
+    }
+
+    markLoaded('epCsvZone', 'epCsvLoaded', 'epCsvLoadedTxt', `${epRows.length} labels loaded`);
+    toast(`${epRows.length} EasyPost labels loaded`, 'success');
+    checkReady();
+  };
+  reader.readAsText(file);
 }
 
-function renderOrderList() {
-  const list = document.getElementById('orderList');
-  document.getElementById('orderCount').textContent = `${orders.length} order${orders.length !== 1 ? 's' : ''}`;
-  document.getElementById('statTotal').textContent = orders.length;
+// ── Load EasyPost PDF ──
+function loadEpPdf(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    epPdfBytes = e.target.result;
+    markLoaded('epPdfZone', 'epPdfLoaded', 'epPdfLoadedTxt', `PDF loaded (${(file.size/1024).toFixed(0)} KB)`);
+    toast('EasyPost PDF loaded', 'success');
+    checkReady();
+  };
+  reader.readAsArrayBuffer(file);
+}
 
-  if (orders.length === 0) {
-    list.innerHTML = '';
-    list.appendChild(document.getElementById('emptyState'));
-    document.getElementById('emptyState').style.display = 'flex';
-    return;
-  }
+// ── Check if ready to process ──
+function checkReady() {
+  const ready = amzOrders.length > 0 && epRows.length > 0 && epPdfBytes !== null;
+  document.getElementById('processBtn').disabled = !ready;
+  if (amzOrders.length > 0) setCardState('card1', 'done');
+  if (epRows.length > 0 && epPdfBytes !== null) setCardState('card2', 'done');
+  if (ready) setCardState('card3', 'active');
+}
 
-  document.getElementById('emptyState').style.display = 'none';
-  list.innerHTML = '';
+// ── Main process ──
+let skuGroups = {}; // sku -> [{amz, ep, pageIndex}]
 
-  orders.forEach(o => {
-    const card = document.createElement('div');
-    card.className = 'order-card' + (selectedIds.has(o.id) ? ' selected' : '');
-    card.dataset.id = o.id;
-    const statusClass = o.status.toLowerCase().includes('ship') && !o.status.toLowerCase().includes('un') ? 'status-shipped' : o.status.toLowerCase().includes('pending') ? 'status-pending' : 'status-unshipped';
-    card.innerHTML = `
-      <div class="order-checkbox">
-        <svg width="9" height="7" fill="none" stroke="#071428" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 9 7"><polyline points="1,3.5 3.5,6 8,1"/></svg>
-      </div>
-      <div class="order-info">
-        <div class="order-id">${o.id}</div>
-        <div class="order-name">${o.name}</div>
-        <div class="order-meta">${o.city}, ${o.state} &middot; ${o.date}</div>
-      </div>
-      <span class="order-status ${statusClass}">${o.status}</span>
-    `;
-    card.addEventListener('click', () => toggleOrder(o.id));
-    list.appendChild(card);
+async function process() {
+  document.getElementById('processBtn').disabled = true;
+  document.getElementById('progressBar').style.display = 'block';
+  document.getElementById('log').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('skuGroups').innerHTML = '';
+  document.getElementById('dlGrid').innerHTML = '';
+
+  logMsg('Matching Amazon orders to EasyPost labels...', '');
+  setProgress(10);
+
+  // Build lookup: (normName + zip) -> epRow
+  const epMap = {};
+  epRows.forEach(ep => {
+    const key = matchKey(ep.name, ep.zip);
+    epMap[key] = ep;
   });
-  updateStats();
+
+  skuGroups = {};
+  let matched = 0, unmatched = 0;
+
+  amzOrders.forEach(amz => {
+    const key = matchKey(amz.name, amz.zip);
+    const ep = epMap[key];
+
+    const sku = amz.sku || 'UNKNOWN';
+    if (!skuGroups[sku]) skuGroups[sku] = [];
+
+    if (ep) {
+      skuGroups[sku].push({ amz, ep, matched: true });
+      matched++;
+      logMsg(`✓ ${amz.name} (${amz.zip}) → SKU ${sku} · page ${ep.pageIndex + 1}`, 'ok');
+    } else {
+      skuGroups[sku].push({ amz, ep: null, matched: false });
+      unmatched++;
+      logMsg(`⚠ No match: ${amz.name} (${amz.zip})`, 'warn');
+    }
+  });
+
+  setProgress(40);
+  logMsg(`Matched: ${matched} | Unmatched: ${unmatched}`, '');
+
+  // Render groups table
+  renderGroups();
+  setProgress(60);
+
+  // Split PDF
+  logMsg('Splitting PDF by SKU...', '');
+  await splitPdf();
+  setProgress(100);
+
+  document.getElementById('results').style.display = 'block';
+
+  // Stats
+  const skuCount = Object.keys(skuGroups).length;
+  document.getElementById('statRow').innerHTML = `
+    <div class="stat-pill"><div class="stat-pill-val" style="color:var(--blue)">${amzOrders.length}</div><div class="stat-pill-label">total orders</div></div>
+    <div class="stat-pill"><div class="stat-pill-val" style="color:var(--green)">${matched}</div><div class="stat-pill-label">matched</div></div>
+    <div class="stat-pill"><div class="stat-pill-val" style="color:var(--red)">${unmatched}</div><div class="stat-pill-label">unmatched</div></div>
+    <div class="stat-pill"><div class="stat-pill-val" style="color:var(--blue-text)">${skuCount}</div><div class="stat-pill-label">SKUs</div></div>
+  `;
+
+  setCardState('card3', 'done');
+  toast(`Done! ${skuCount} SKU PDFs ready`, 'success');
+  document.getElementById('processBtn').disabled = false;
 }
 
-function toggleOrder(id) {
-  if (selectedIds.has(id)) selectedIds.delete(id);
-  else selectedIds.add(id);
-  document.querySelectorAll('.order-card').forEach(c => c.classList.toggle('selected', selectedIds.has(c.dataset.id)));
-  updateStats();
-}
+function renderGroups() {
+  const container = document.getElementById('skuGroups');
+  container.innerHTML = '';
 
-function toggleSelectAll() {
-  if (selectedIds.size === orders.length) selectedIds.clear();
-  else orders.forEach(o => selectedIds.add(o.id));
-  document.querySelectorAll('.order-card').forEach(c => c.classList.toggle('selected', selectedIds.has(c.dataset.id)));
-  updateStats();
-}
-
-function updateStats() {
-  const sel = selectedIds.size;
-  document.getElementById('statSelected').textContent = sel;
-  document.getElementById('selectionLabel').textContent = sel === 0 ? 'No orders selected' : `${sel} order${sel !== 1 ? 's' : ''} selected`;
-  document.getElementById('generateBtn').disabled = sel === 0;
-}
-
-function previewSelected() {
-  if (selectedIds.size === 0) { showToast('Select at least one order', 'error'); return; }
-  const grid = document.getElementById('labelGrid');
-  grid.innerHTML = '';
-  grid.style.display = 'grid';
-  document.getElementById('noPreview').style.display = 'none';
-
-  const carrierEl = document.getElementById('carrierSelect');
-  const serviceEl = document.getElementById('serviceSelect');
-  const carrierName = carrierEl.options[carrierEl.selectedIndex].text;
-  const serviceName = serviceEl.options[serviceEl.selectedIndex].text;
-
-  const selected = orders.filter(o => selectedIds.has(o.id));
-  selected.forEach(o => {
-    const card = document.createElement('div');
-    card.className = 'label-card';
-    const addr2line = o.addr2 ? `<br>${o.addr2}` : '';
-    card.innerHTML = `
-      <div class="label-card-header">
-        <span class="label-card-id">${o.id}</span>
-        <div class="label-card-actions">
-          <button class="icon-btn" title="Remove" onclick="removeLabel('${o.id}')">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </div>
+  Object.entries(skuGroups).sort(([a],[b]) => a.localeCompare(b)).forEach(([sku, items]) => {
+    const matchedItems = items.filter(i => i.matched);
+    const div = document.createElement('div');
+    div.className = 'sku-group';
+    div.innerHTML = `
+      <div class="sku-group-header">
+        <span class="sku-name">${sku}</span>
+        <span class="sku-count">${matchedItems.length}/${items.length} matched · ${items.length} label${items.length !== 1 ? 's' : ''}</span>
       </div>
-      <div class="label-visual">
-        <div class="label-from">From</div>
-        <div class="label-company">Skalr LLC / JLB Sales</div>
-        <hr class="label-divider">
-        <div class="label-to-tag">SHIP TO</div>
-        <div class="label-recipient">${o.name}</div>
-        <div class="label-address">${o.addr1}${addr2line}<br>${o.city}, ${o.state} ${o.zip}<br>${o.country}</div>
-        <div class="label-barcode-area">
-          <div>
-            ${generateBarcode()}
-            <div class="label-order-ref" style="margin-top:4px">Order: ${o.id}</div>
+      <div class="sku-orders">
+        ${items.map(item => `
+          <div class="order-row">
+            <span class="order-row-name">${item.amz.name}</span>
+            <span class="order-row-zip">${item.amz.zip}</span>
+            <span class="order-row-tracking">${item.ep ? item.ep.tracking.substring(0,16) + '...' : '—'}</span>
+            <span class="order-row-page">${item.ep ? 'p.' + (item.ep.pageIndex + 1) : '—'}</span>
+            <span class="match-badge ${item.matched ? 'matched' : 'unmatched'}">${item.matched ? 'matched' : 'no match'}</span>
           </div>
-          <div class="label-service-badge">${carrierName}<br>${serviceName}</div>
-        </div>
+        `).join('')}
       </div>
     `;
-    grid.appendChild(card);
+    container.appendChild(div);
   });
-
-  document.getElementById('statLabels').textContent = selected.length;
-  showToast(`${selected.length} label${selected.length !== 1 ? 's' : ''} ready`, 'success');
 }
 
-function generateBarcode() {
-  let bars = '';
-  let x = 0;
-  for (let i = 0; i < 40; i++) {
-    const w = Math.random() > 0.65 ? 3 : 1.5;
-    const h = 26 + Math.floor(Math.random() * 10);
-    bars += `<rect x="${x}" y="${36-h}" width="${w}" height="${h}" fill="#111"/>`;
-    x += w + 1.5;
+// PDF objects keyed by SKU
+let pdfBlobs = {};
+
+async function splitPdf() {
+  const dlGrid = document.getElementById('dlGrid');
+  dlGrid.innerHTML = '';
+  pdfBlobs = {};
+
+  const srcPdf = await PDFLib.PDFDocument.load(epPdfBytes);
+  const totalPages = srcPdf.getPageCount();
+  logMsg(`PDF has ${totalPages} pages`, '');
+
+  const skus = Object.keys(skuGroups).sort();
+
+  for (const sku of skus) {
+    const items = skuGroups[sku].filter(i => i.matched);
+    if (items.length === 0) continue;
+
+    const newPdf = await PDFLib.PDFDocument.create();
+
+    for (const item of items) {
+      const pageIdx = item.ep.pageIndex;
+      if (pageIdx < 0 || pageIdx >= totalPages) {
+        logMsg(`Page ${pageIdx + 1} out of range for ${item.amz.name}`, 'warn');
+        continue;
+      }
+      const [copiedPage] = await newPdf.copyPages(srcPdf, [pageIdx]);
+      newPdf.addPage(copiedPage);
+    }
+
+    const pdfBytes = await newPdf.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    pdfBlobs[sku] = { url, blob, count: items.length };
+
+    logMsg(`✓ ${sku} → ${items.length} page${items.length !== 1 ? 's' : ''}`, 'ok');
+
+    // Download card
+    const card = document.createElement('div');
+    card.className = 'dl-card';
+    const safeSku = sku.replace(/[^a-zA-Z0-9_-]/g, '_');
+    card.innerHTML = `
+      <div class="dl-sku">${sku}</div>
+      <div class="dl-meta">${items.length} label${items.length !== 1 ? 's' : ''}</div>
+      <button class="btn btn-green" style="width:100%;justify-content:center;margin-top:4px" onclick="downloadSku('${sku}','${safeSku}')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+        Download PDF
+      </button>
+    `;
+    dlGrid.appendChild(card);
   }
-  return `<svg width="${Math.round(x)}" height="36" style="display:block">${bars}</svg>`;
 }
 
-function removeLabel(id) {
-  const grid = document.getElementById('labelGrid');
-  grid.querySelectorAll('.label-card').forEach(card => {
-    if (card.querySelector('.label-card-id').textContent === id) card.remove();
-  });
-  const remaining = grid.querySelectorAll('.label-card').length;
-  document.getElementById('statLabels').textContent = remaining;
-  if (remaining === 0) {
-    grid.style.display = 'none';
-    document.getElementById('noPreview').style.display = 'flex';
-  }
-}
-
-function generateLabels() {
-  previewSelected();
-}
-
-function printLabels() {
-  const grid = document.getElementById('labelGrid');
-  if (!grid.querySelectorAll('.label-card').length) { showToast('No labels to print', 'error'); return; }
-  window.print();
-}
-
-function exportCSV() {
-  const rows = orders.filter(o => selectedIds.has(o.id));
-  if (rows.length === 0) { showToast('Select orders first', 'error'); return; }
-  const headers = ['order-id','recipient-name','ship-address-1','ship-address-2','ship-city','ship-state','ship-postal-code','ship-country','sku','quantity-purchased','order-status'];
-  const csv = [headers.join(','), ...rows.map(o =>
-    [o.id,o.name,o.addr1,o.addr2,o.city,o.state,o.zip,o.country,o.sku,o.qty,o.status].map(v=>`"${v}"`).join(',')
-  )].join('\n');
+function downloadSku(sku, safeSku) {
+  const entry = pdfBlobs[sku];
+  if (!entry) return;
   const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = `topaz-export-${Date.now()}.csv`;
+  a.href = entry.url;
+  a.download = `labels_${safeSku}.pdf`;
   a.click();
-  showToast('CSV exported', 'success');
+  toast(`Downloaded ${safeSku}.pdf`, 'success');
 }
 
-function clearAll() {
-  orders = []; selectedIds.clear();
-  renderOrderList();
-  document.getElementById('labelGrid').style.display = 'none';
-  document.getElementById('labelGrid').innerHTML = '';
-  document.getElementById('noPreview').style.display = 'flex';
-  document.getElementById('statLabels').textContent = '0';
-  csvInput.value = '';
-  showToast('Cleared', 'success');
+function downloadAll() {
+  const skus = Object.keys(pdfBlobs);
+  if (skus.length === 0) { toast('No PDFs ready', 'error'); return; }
+  skus.forEach((sku, i) => {
+    setTimeout(() => downloadSku(sku, sku.replace(/[^a-zA-Z0-9_-]/g, '_')), i * 300);
+  });
 }
 
-function showToast(msg, type = 'success') {
-  const toast = document.getElementById('toast');
-  const dot = document.getElementById('toastDot');
-  document.getElementById('toastMsg').textContent = msg;
-  toast.className = `toast ${type} show`;
-  dot.className = `dot dot-${type}`;
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.classList.remove('show'), 2800);
+// ── Helpers ──
+function norm(s) {
+  return s.toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
 }
 
-loadDemo();
+function normZip(z) {
+  return (z || '').replace(/\D/g, '').substring(0, 5);
+}
+
+function matchKey(name, zip) {
+  return norm(name) + '|' + normZip(zip);
+}
+
+function splitLine(line, delim) {
+  // Handle quoted CSV fields
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === delim && !inQ) { result.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur);
+  return result;
+}
+
+function markLoaded(zoneId, loadedId, txtId, msg) {
+  document.getElementById(zoneId).classList.add('loaded');
+  document.getElementById(loadedId).style.display = 'flex';
+  document.getElementById(txtId).textContent = msg;
+}
+
+function setCardState(cardId, state) {
+  const card = document.getElementById(cardId);
+  card.className = 'step-card ' + state;
+  const num = card.querySelector('.step-num');
+  if (state === 'done') num.innerHTML = `<svg width="11" height="9" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 11 9"><polyline points="1,4.5 4,7.5 10,1"/></svg>`;
+}
+
+function setProgress(pct) {
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function logMsg(msg, cls) {
+  const log = document.getElementById('log');
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  const d = document.getElementById('tdot');
+  document.getElementById('tmsg').textContent = msg;
+  t.className = `toast ${type} show`;
+  d.style.background = type === 'success' ? 'var(--green)' : 'var(--red)';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
 </script>
 </body>
 </html>
