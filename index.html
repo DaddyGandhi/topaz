@@ -6,6 +6,7 @@
 <title>Topaz · Label Splitter</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -281,6 +282,16 @@ header { display: flex; align-items: center; justify-content: space-between; pad
             <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="downloadAll()">Download all</button>
           </div>
           <div class="download-grid" id="dlGrid"></div>
+          <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:3px;">Amazon Shipment Confirmation</div>
+              <div style="font-size:11px;color:var(--text3);">Upload to Manage Orders &rarr; Upload order files to confirm shipments</div>
+            </div>
+            <button class="btn btn-primary" onclick="downloadAmzConfirm()">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+              Download Confirmation CSV
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -332,6 +343,7 @@ function parseAmzFile(text) {
     if (!name) continue;
     orders.push({
       orderId: r['order-id'] || r['amazon-order-id'] || `row-${i}`,
+      orderItemId: r['order-item-id'] || '',
       name: name,
       nameNorm: norm(name),
       addr1: r['ship-address-1'] || '',
@@ -606,6 +618,91 @@ function downloadAll() {
 }
 
 // ── Helpers ──
+function downloadAmzConfirm() {
+  const carrierEl = document.getElementById("labelType");
+  const carrierVal = carrierEl ? carrierEl.value : "usps_priority_9401";
+  let carrierCode = "USPS";
+  if (carrierVal.startsWith("ups")) carrierCode = "UPS";
+  else if (carrierVal.startsWith("fedex")) carrierCode = "FedEx";
+
+  const fromName   = (document.getElementById("fromName")   || {value:"Tentara"}).value   || "Tentara";
+  const fromStreet = (document.getElementById("fromStreet") || {value:"1017 Garden Plaza"}).value || "1017 Garden Plaza";
+  const fromCity   = (document.getElementById("fromCity")   || {value:"Orlando"}).value   || "Orlando";
+  const fromState  = (document.getElementById("fromState")  || {value:"FL"}).value  || "FL";
+  const fromZip    = (document.getElementById("fromZip")    || {value:"32803"}).value    || "32803";
+
+  const shipDate = today();
+  let count = 0;
+  const dataRows = [];
+
+  Object.values(skuGroups).forEach(items => {
+    items.forEach(item => {
+      if (!item.matched || !item.ep) return;
+      dataRows.push({
+        "order-id":                       item.amz.orderId,
+        "order-item-id":                  item.amz.orderItemId,
+        "quantity":                       item.amz.qty,
+        "ship-date":                      shipDate,
+        "carrier-code":                   carrierCode,
+        "carrier-name":                   "",
+        "tracking-number":                item.ep.tracking,
+        "ship-method":                    "",
+        "transparency_code":              "",
+        "ship_from_address_name":         fromName,
+        "ship_from_address_line1":        fromStreet,
+        "ship_from_address_line2":        "",
+        "ship_from_address_line3":        "",
+        "ship_from_address_city":         fromCity,
+        "ship_from_address_county":       "",
+        "ship_from_address_state_or_region": fromState,
+        "ship_from_address_postalcode":   fromZip,
+        "ship_from_address_countrycode":  "US",
+        "ship_from_supply_source_id":     ""
+      });
+      count++;
+    });
+  });
+
+  if (count === 0) { toast("No matched orders to confirm", "error"); return; }
+
+  // Load the embedded template and fill the ShippingConfirmation sheet
+  const templateBytes = Uint8Array.from(atob(CONFIRM_TEMPLATE_B64), c => c.charCodeAt(0));
+  const wb = XLSX.read(templateBytes, { type: "array" });
+  const ws = wb.Sheets["ShippingConfirmation"];
+
+  // Get headers from row 1
+  const headers = [];
+  let col = 0;
+  while (true) {
+    const cellAddr = XLSX.utils.encode_cell({ r: 0, c: col });
+    if (!ws[cellAddr]) break;
+    headers.push(ws[cellAddr].v);
+    col++;
+  }
+
+  // Write each data row starting at row 2 (index 1)
+  dataRows.forEach((row, rowIdx) => {
+    headers.forEach((header, colIdx) => {
+      const cellAddr = XLSX.utils.encode_cell({ r: rowIdx + 1, c: colIdx });
+      const val = row[header] !== undefined ? row[header] : "";
+      ws[cellAddr] = { v: val, t: typeof val === "number" ? "n" : "s" };
+    });
+  });
+
+  // Update sheet range
+  const range = XLSX.utils.decode_range(ws["!ref"] || "A1:S1");
+  range.e.r = dataRows.length;
+  ws["!ref"] = XLSX.utils.encode_range(range);
+
+  const wbOut = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([wbOut], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "amazon_confirm_" + today() + ".xlsx";
+  a.click();
+  toast("Downloaded confirmation xlsx (" + count + " orders)", "success");
+}
+
 function toggleSenderEdit() {
   const edit = document.getElementById("senderEdit");
   const disp = document.getElementById("senderDisplay");
