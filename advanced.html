@@ -605,12 +605,27 @@ async function process() {
   document.getElementById('log').innerHTML = '';
   logMsg('Matching orders to labels...', '');
   setProgress(10);
+  // Build EP map as array per key to handle multiple labels for same person
   const epMap = {};
-  epRows.forEach(ep => { epMap[ep.nameNorm + '|' + ep.zip] = ep; });
+  epRows.forEach(ep => {
+    const key = ep.nameNorm + '|' + ep.zip;
+    if (!epMap[key]) epMap[key] = [];
+    epMap[key].push(ep);
+  });
+  const epConsumed = {};
   skuGroups = {};
   let matched = 0, unmatched = 0;
+  // Expand orders: qty 5 = 5 entries so each label gets matched
+  const expandedOrders = [];
   amzOrders.forEach(amz => {
-    const ep = epMap[amz.nameNorm + '|' + amz.zip];
+    const qty = parseInt(amz.qty) || 1;
+    for (let i = 0; i < qty; i++) expandedOrders.push(Object.assign({}, amz));
+  });
+  expandedOrders.forEach(amz => {
+    const key = amz.nameNorm + '|' + amz.zip;
+    if (!epConsumed[key]) epConsumed[key] = 0;
+    const ep = (epMap[key] || [])[epConsumed[key]] || null;
+    if (ep) epConsumed[key]++;
     const sku = amz.sku || 'UNKNOWN';
     if (!skuGroups[sku]) skuGroups[sku] = [];
     if (ep) { skuGroups[sku].push({ amz, ep, matched: true }); matched++; logMsg('OK ' + amz.name + ' (' + amz.zip + ') -> ' + sku + ' p.' + (ep.pageIndex+1), 'ok'); }
